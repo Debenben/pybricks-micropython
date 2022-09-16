@@ -265,7 +265,7 @@ static PT_THREAD(set_discoverable(struct pt *pt, pbio_task_t *task)) {
     hci_le_set_scan_response_data_end();
 
     PT_WAIT_WHILE(pt, write_xfer_size);
-    aci_gap_set_discoverable_begin(ADV_IND, 0, 0, PUBLIC_ADDR, NO_WHITE_LIST_USE,
+    aci_gap_set_discoverable_begin(ADV_IND, 0, 0, RANDOM_ADDR, NO_WHITE_LIST_USE,
         0, NULL, sizeof(service_uuids), service_uuids, 0, 0);
     PT_WAIT_UNTIL(pt, hci_command_complete);
     aci_gap_set_discoverable_end();
