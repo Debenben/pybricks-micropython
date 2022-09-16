@@ -1091,6 +1091,25 @@ static PT_THREAD(hci_init(struct pt *pt)) {
     PT_WAIT_UNTIL(pt, hci_command_complete);
     aci_gatt_update_char_value_end();
 
+    // The chip always uses the same random address, so we have to generate
+    // an actually random one to get a new address each time. This must be
+    // called after aci_gap_init to take effect.
+
+    // STM32F0 doesn't have a random number generator, so we use the bluetooth
+    // chip to get some random bytes.
+    hci_le_rand_begin();
+    PT_WAIT_UNTIL(pt, hci_command_complete);
+    {
+        uint8_t rand_buf[8];
+        hci_le_rand_end(rand_buf);
+
+        // hard-coding MSB to meet requirements of static random address
+        rand_buf[5] = 0xF0;
+        hci_le_set_random_address_begin(rand_buf);
+    }
+    PT_WAIT_UNTIL(pt, hci_command_complete);
+    hci_le_set_random_address_end();
+
     PT_END(pt);
 }
 
