@@ -6,6 +6,7 @@
 #if PYBRICKS_PY_PUPDEVICES
 
 #include <pybricks/common.h>
+#include <pybricks/geometry.h>
 #include <pybricks/parameters.h>
 #include <pybricks/pupdevices.h>
 
@@ -47,9 +48,55 @@ STATIC mp_obj_t pupdevices_TiltSensor_tilt(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pupdevices_TiltSensor_tilt_obj, pupdevices_TiltSensor_tilt);
 
+
+// --------------------------------------------------
+// start copy from bicone color distance pull request
+// --------------------------------------------------
+// parabola approximating the first 90 degrees of sine. (0,90) to (0, 10000)
+static int32_t sin_deg_branch0(int32_t x) {
+    return (201 - x) * x;
+}
+
+// integer sine approximation from degrees to (-10000, 10000)
+static int32_t sin_deg(int32_t x) {
+    x = x % 360;
+    if (x < 90) {
+        return sin_deg_branch0(x);
+    }
+    if (x < 180) {
+        return sin_deg_branch0(180 - x);
+    }
+    if (x < 270) {
+        return -sin_deg_branch0(x - 180);
+    }
+    return -sin_deg_branch0(360 - x);
+}
+
+static int32_t cos_deg(int32_t x) {
+    return sin_deg(x + 90);
+}
+// --------------------------------------------------
+// end copy from bicone color distance pull request
+// --------------------------------------------------
+
+
+// pybricks.pupdevices.TiltSensor.acceleration
+STATIC mp_obj_t pupdevices_TiltSensor_acceleration(mp_obj_t self_in) {
+    pupdevices_TiltSensor_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int32_t tilt[3]; // uint8 would be sufficient
+    pb_device_get_values(self->pbdev, PBIO_IODEV_MODE_PUP_WEDO2_TILT_SENSOR__CAL, tilt);
+    float ret[3];
+    ret[0] = (1.0E-12*sin_deg(tilt[0]))*cos_deg(tilt[1])*cos_deg(tilt[2]);
+    ret[1] = (1.0E-12*cos_deg(tilt[0]))*sin_deg(tilt[1])*cos_deg(tilt[2]);
+    ret[2] = (1.0E-12*cos_deg(tilt[0]))*cos_deg(tilt[1])*sin_deg(tilt[2]);
+    return pb_type_Matrix_make_vector(3, ret, false);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(pupdevices_TiltSensor_acceleration_obj, pupdevices_TiltSensor_acceleration);
+
 // dir(pybricks.pupdevices.TiltSensor)
 STATIC const mp_rom_map_elem_t pupdevices_TiltSensor_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_tilt),       MP_ROM_PTR(&pupdevices_TiltSensor_tilt_obj) },
+    { MP_ROM_QSTR(MP_QSTR_acceleration),       MP_ROM_PTR(&pupdevices_TiltSensor_acceleration_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(pupdevices_TiltSensor_locals_dict, pupdevices_TiltSensor_locals_dict_table);
 
