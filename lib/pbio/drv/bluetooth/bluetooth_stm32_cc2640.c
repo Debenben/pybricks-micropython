@@ -45,7 +45,7 @@
 
 PROCESS(pbdrv_bluetooth_spi_process, "Bluetooth SPI");
 
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG
 #include <pbdrv/../../drv/uart/uart_debug_first_port.h>
@@ -1148,6 +1148,7 @@ void pbdrv_bluetooth_stop_broadcasting(pbio_task_t *task) {
 
 static PT_THREAD(observe_task(struct pt *pt, pbio_task_t *task)) {
     PT_BEGIN(pt);
+    DEBUG_PRINT("observe_task:start");
 
     if (!is_observing) {
         PT_WAIT_WHILE(pt, write_xfer_size);
@@ -1170,12 +1171,15 @@ static PT_THREAD(observe_task(struct pt *pt, pbio_task_t *task)) {
 
     task->status = PBIO_SUCCESS;
 
+    DEBUG_PRINT("observe_task:finish");
     PT_END(pt);
 }
 
 void pbdrv_bluetooth_start_observing(pbio_task_t *task, pbdrv_bluetooth_start_observing_callback_t callback) {
+    DEBUG_PRINT("pbdrv_bluetooth_start_observing:start\n");
     observe_callback = callback;
     start_task(task, observe_task, NULL);
+    DEBUG_PRINT("pbdrv_bluetooth_start_observing:finish\n");
 }
 
 static PT_THREAD(stop_observe_task(struct pt *pt, pbio_task_t *task)) {
@@ -1199,11 +1203,13 @@ static PT_THREAD(stop_observe_task(struct pt *pt, pbio_task_t *task)) {
 }
 
 void pbdrv_bluetooth_stop_observing(pbio_task_t *task) {
+    DEBUG_PRINT("pbdrv_bluetooth_stop_observing:start\n");
     observe_callback = NULL;
     // avoid restarting observing even if this task get queued
     observe_restart_enabled = false;
 
     start_task(task, stop_observe_task, NULL);
+    DEBUG_PRINT("pbdrv_bluetooth_stop_observing:finish\n");
 }
 
 // Driver interrupt callbacks
